@@ -1,21 +1,13 @@
-// var map = null
-// var currentLocMarker, pos, result;
+
 var markers = [];
-// var polygons = [];
-// var windows = [];
-// var initialized = false;
-// var allRests = null;
-// var JSON = [];
-// var count = 0;
 var stateGeometries;
 var airports = null;
 var routes = null;
 var flightPaths = [];
 var airportRoutes = {};
 var showAirportMarkers = false;
-// var numAirports = 0;
-// var justAirports = [];
-// var first = true;
+var visibleAirports = [];
+// var minDestinations = 10;
 var pathsArr = [];
 var routeColors = {};
 function init() {
@@ -39,6 +31,8 @@ function changeFunction() {
 function initializeAirports() {
 	getData("https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat", function (airportData) {
 		airports = [];
+		var unitedStatesAirports = [];
+
 		airportData.split("\n").forEach(
 			airport => {
 				var airportDataFields = cleanAirportField(airport.split(","));
@@ -46,13 +40,29 @@ function initializeAirports() {
 
 				if (airportName && airportName != "\N") {
 					addAirport(airportDataFields);
+					// if (airportDataFields[3] == "United States")
+					// 	unitedStatesAirports.push(airportDataFields);
 					airports[airportName] = airportDataFields;
 				}
 			});
 
+
+		// console.log(unitedStatesAirports);
+		// var cities = {};
+		// unitedStatesAirports.forEach(airportElement => {		
+		// 		cities[airportElement[11]] = "x";
+		// 		cities[airportElement[2]] = "x";
+
+		// });
+		// console.log(cities);
+		// //find where each airport is
+		// console.log(airports['ORD']);
+		// console.log(airports['YYZ']);
+
 		initializeRoutes();
 	});
 }
+
 function initializeRoutes() {
 	getData("https://raw.githubusercontent.com/jpatokal/openflights/master/data/routes.dat", function (rawRouteData) {
 		var routeData = rawRouteData.split("\n");
@@ -62,7 +72,9 @@ function initializeRoutes() {
 			routes.push(routeDataFields);
 			addRoutes(routeDataFields);
 		});
-		initializeStateBorders();
+		// var minDestinations = 10;
+		updateDestinationRestrictions();
+		//initializeStateBorders();
 	});
 }
 
@@ -70,11 +82,11 @@ function initializeStateBorders() {
 	var states_URL = "https://cors.io/?http://eric.clst.org/assets/wiki/uploads/Stuff/gz_2010_us_040_00_500k.json";
 	getData(states_URL, (rawStatesData) => {
 		var statesDataJSON = JSON.parse(rawStatesData);
-		 stateGeometries = {};
-		statesDataJSON.features.forEach(stateGeometryData=>{
+		stateGeometries = {};
+		statesDataJSON.features.forEach(stateGeometryData => {
 			stateGeometries[stateGeometryData.properties.NAME] = {
-				"type":"FeatureCollection",
-				"features":[stateGeometryData]
+				"type": "FeatureCollection",
+				"features": [stateGeometryData]
 			}
 		});
 	})
@@ -89,21 +101,41 @@ function cleanAirportField(airportDataFields) {
 }
 
 function addChosenRoutes(airportsList) {
-	setBothFalse(false);
+	setAllPaths(false);
+
 	if (airportsList)
 		airportsList.forEach(airportCode => {
 			if (pathsArr) {
-				if (showAirportMarkers) {
-					var airportsToHighlight = airportRoutes[airportCode].slice();
-					airportsToHighlight.push(airportCode);
-					addChosenAirports(airportsToHighlight);
-				}
+				//if (showAirportMarkers) {
+				var airportsToHighlight = airportRoutes[airportCode].slice();
+				airportsToHighlight.push(airportCode);
+				console.log(airportsToHighlight);
+				addChosenAirports(airportsToHighlight);
+				//}
 				var flightArrPath = pathsArr[airportCode.toUpperCase()];
 				flightArrPath.forEach(path => {
 					path.setVisible(true);
 				})
 			}
 		});
+}
+
+function showVisibleAirports(){
+	addChosenAirports(visibleAirports);
+}
+
+function updateDestinationRestrictions() {
+	var min = document.getElementById("minimumDestinations").value;
+	console.log(min);
+	visibleAirports = [];
+	Object.keys(airportRoutes).forEach(destinationCode => {
+		if (Object.keys(airportRoutes[destinationCode]).length >= min) {
+			visibleAirports.push(destinationCode)
+
+		}
+	});
+	console.log(visibleAirports);
+	showVisibleAirports();
 }
 
 function addChosenAirports(airportList) {
@@ -204,34 +236,17 @@ function addAirport(airportDataFields) {
 	marker.content = airportName;
 
 
-	var infowindow = new google.maps.InfoWindow();
+	//var infowindow = new google.maps.InfoWindow();
 	google.maps.event.addListener(marker, 'click', function () {
-		infowindow.setContent(this.content);
-		infowindow.open(map, this);
+		addChosenRoutes([airportCode]);
+		map.setCenter(pos);
+
 	});
 
 	marker.setVisible(false);
 	markers[airportCode] = marker;
 
 
-}
-
-
-function recenterMap(pos) {
-	map.setCenter(pos);
-	var marker = new google.maps.Marker({
-		map: map,
-		title: "Center Location",
-		position: pos,
-	});
-	markers.push(marker);
-}
-
-function clearOverlays() {
-	for (var i = 0; i < markers.length; i++) {
-		markers[i].setMap(null);
-	}
-	markers.length = 0;
 }
 
 function getData(url, callback) {
@@ -249,6 +264,3 @@ function getData(url, callback) {
 
 }
 
-function createPositionArr(lat, lng) {
-	return { "lat": parseFloat(lat), "lng": parseFloat(lng) };
-}

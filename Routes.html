@@ -66,7 +66,7 @@
 		<br>
 		<br> -->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-		
+
 		<script src="SideNav.js" type="text/javascript"></script>
 		<script src="Map.js" type="text/javascript"></script>
 		<script src="Utility.js" type="text/javascript"></script>
@@ -79,14 +79,16 @@
 				<option value="Routes">Routes</option>
 			</select>
 			<br> -->
+			<input type="range" min="1" max="100" value="10" id="minimumDestinations" onChange="updateDestinationRestrictions()">
 
-			<form id="input" action="javascript:changeFunction()">
+			<!-- <form id="input" action="javascript:changeFunction()">
 				<br> Airport to include:
 				<input type="text" name="airpots" value="" id="airports">
 				<input type="submit" value="Submit">
-			</form>
+			</form> -->
 
-			<input type="checkbox" name="markers" value="markers" id="showMarkers" onclick="toggleShowAirportMarkers()"> Show airport markers<br>
+			<!-- <input type="checkbox" name="markers" value="markers" id="showMarkers" onclick="toggleShowAirportMarkers()"> Show airport markers
+			<br> -->
 
 
 
@@ -95,11 +97,38 @@
 		<script>
 			window.onkeyup = function (e) {
 				var key = e.keyCode ? e.keyCode : e.which;
+				console.log(key);
+				console.log(String.fromCharCode(key))
+				switch (key) {
+					case 'S'.charCodeAt(0):
+						setBothFalse();
+						break;
+					case 'O'.charCodeAt(0):
+						openNav();
+						break;
+					case 'A'.charCodeAt(0):
+						showVisibleAirports();
+						setAllPaths(false);
+						break;
+					case '1'.charCodeAt(0):
+						document.getElementById("minimumDestinations").value -= 4;
+						updateDestinationRestrictions();
+						break;
+					case '2'.charCodeAt(0):
+						document.getElementById("minimumDestinations").value += 4;
+						updateDestinationRestrictions();
+						break;
+					case 27:
+						closeNav();
+						break;
+					default:
+						break;
 
-				if ((key >= "A".charCodeAt(0) && key <= "Z".charCodeAt(0)) || (key >= "a".charCodeAt(0) && key <= "z".charCodeAt(0)))
-					openNav();
+				}
 
 			}
+
+
 		</script>
 
 		<!-- <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; open</span> -->
